@@ -1,14 +1,19 @@
 """
-vidIQ Python API - A simple wrapper for vidIQ's YouTube keyword analysis API.
+vidIQ Python API - YouTube Keyword Analysis
 
-This package provides a clean, simple interface for accessing vidIQ's keyword
-analysis data programmatically.
+A simple Python wrapper for vidIQ keyword analysis API.
+Perfect for integrating YouTube SEO research into your Python projects.
+
+Usage:
+    from vidiq_api import VidiqAPI
+    
+    api = VidiqAPI("your_auth_token")
+    result = api.analyze_keyword("youtube SEO")
+    print(result['data']['volume'])
 """
 
-from .client import VidiqAPI
+from .vidiq_api import VidiqAPI
 
 __version__ = "1.0.0"
-__author__ = "Your Name"
-__email__ = "your.email@example.com"
-
+__author__ = "vidIQ API Wrapper"
 __all__ = ["VidiqAPI"]
