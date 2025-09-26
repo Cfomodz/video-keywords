@@ -13,6 +13,8 @@ A clean, simple Python wrapper for the vidIQ YouTube keyword analysis API. Perfe
 - **Rate Limited**: Built-in delays to respect API limits
 - **Error Handling**: Comprehensive error messages
 - **Type Hints**: Full type annotations for better IDE support
+- **CSV Export**: Export keyword research data to CSV files
+- **Multiple Data Types**: Related keywords, matching keywords, and questions
 - **No Dependencies**: Only requires `requests`
 
 ## 📦 Installation
@@ -114,6 +116,74 @@ except Exception as e:
     # Handle rate limits, invalid tokens, etc.
 ```
 
+## 📊 CSV Export Features
+
+Export comprehensive keyword research data to CSV files for analysis in Excel, Google Sheets, or other tools.
+
+### Combined CSV Export
+Export all keyword types (related, matching, questions) to a single CSV file:
+
+```python
+from vidiq_api import VidiqAPI
+
+api = VidiqAPI("your_token")
+
+# Export to default filename (keyword_keywords.csv)
+csv_file = api.export_to_csv("youtube SEO", limit=50)
+print(f"Exported to: {csv_file}")
+
+# Export to custom filename
+csv_file = api.export_to_csv("video marketing", "my_keywords.csv", limit=100)
+```
+
+### Separate CSV Files
+Export each keyword type to separate CSV files:
+
+```python
+# Export to separate files
+file_paths = api.export_separate_csvs("content creation", output_dir="exports", limit=50)
+
+print("Exported files:")
+for data_type, file_path in file_paths.items():
+    print(f"  {data_type}: {file_path}")
+```
+
+### CSV Format
+The exported CSV files contain the following columns:
+
+| Column | Description |
+|--------|-------------|
+| `keyword` | The keyword text |
+| `type` | Type of keyword (related, matching, question) |
+| `score` | Relevance/quality score |
+| `volume` | Search volume estimate |
+| `competition` | Competition level |
+| `source_keyword` | Original search keyword |
+| `timestamp` | When the data was collected |
+
+### Complete Workflow with CSV
+```python
+def complete_keyword_research(keyword):
+    api = VidiqAPI("your_token")
+    
+    # Get all keyword data
+    print(f"Researching: {keyword}")
+    
+    # Export combined CSV
+    combined_file = api.export_to_csv(keyword, limit=100)
+    
+    # Export separate CSVs for detailed analysis
+    separate_files = api.export_separate_csvs(keyword, "detailed_exports", limit=200)
+    
+    print(f"Combined export: {combined_file}")
+    print(f"Detailed exports: {separate_files}")
+    
+    return combined_file, separate_files
+
+# Use the function
+combined, separate = complete_keyword_research("youtube automation")
+```
+
 ## 🎮 Command Line Usage
 
 ```bash
@@ -202,6 +272,63 @@ Analyze multiple keywords with automatic error handling.
 **Returns:**
 - `Dict`: Results for each keyword
 
+### `get_related_keywords(keyword: str, min_related_score: int = 0, delay: float = 1.0) -> Dict`
+Get related keywords for a given keyword.
+
+**Parameters:**
+- `keyword` (str): The keyword to find related terms for
+- `min_related_score` (int): Minimum score for related keywords
+- `delay` (float): Delay between requests
+
+**Returns:**
+- `Dict`: Related keywords data
+
+### `get_matching_keywords(keyword: str, limit: int = 300, delay: float = 1.0) -> Dict`
+Get matching keywords (permutations) for a given keyword.
+
+**Parameters:**
+- `keyword` (str): The keyword to find matches for
+- `limit` (int): Maximum number of results to return
+- `delay` (float): Delay between requests
+
+**Returns:**
+- `Dict`: Matching keywords data
+
+### `get_questions(keyword: str, limit: int = 300, delay: float = 1.0) -> Dict`
+Get question-based keywords for a given keyword.
+
+**Parameters:**
+- `keyword` (str): The keyword to find questions for
+- `limit` (int): Maximum number of results to return
+- `delay` (float): Delay between requests
+
+**Returns:**
+- `Dict`: Question keywords data
+
+### `export_to_csv(keyword: str, output_file: str = None, limit: int = 300, delay: float = 1.0) -> str`
+Export all keyword research data to a single CSV file.
+
+**Parameters:**
+- `keyword` (str): The keyword to research
+- `output_file` (str, optional): Path to output CSV file
+- `limit` (int): Maximum number of results per category
+- `delay` (float): Delay between API requests
+
+**Returns:**
+- `str`: Path to the created CSV file
+
+### `export_separate_csvs(keyword: str, output_dir: str = ".", limit: int = 300, delay: float = 1.0) -> Dict[str, str]`
+Export keyword research data to separate CSV files for each type.
+
+**Parameters:**
+- `keyword` (str): The keyword to research
+- `output_dir` (str): Directory to save CSV files
+- `limit` (int): Maximum number of results per category
+- `delay` (float): Delay between API requests
+
+**Returns:**
+- `Dict[str, str]`: Dictionary with file paths for each exported CSV type
+
 ## ⚠️ Rate Limiting
 
 The API includes built-in rate limiting to respect vidIQ's servers:
@@ -253,6 +380,16 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [vidIQ Website](https://vidiq.com/)
 
 ## 📈 Changelog
+
+### v1.1.0
+- **NEW**: CSV export functionality
+- **NEW**: Related keywords API (`get_related_keywords()`)
+- **NEW**: Matching keywords API (`get_matching_keywords()`)
+- **NEW**: Questions API (`get_questions()`)
+- **NEW**: Combined CSV export (`export_to_csv()`)
+- **NEW**: Separate CSV exports (`export_separate_csvs()`)
+- Enhanced example usage with CSV workflows
+- Comprehensive CSV format documentation
 
 ### v1.0.0
 - Initial release

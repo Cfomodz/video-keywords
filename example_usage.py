@@ -180,6 +180,70 @@ def complete_keyword_research(keyword: str):
     except Exception as e:
         print(f"Error in complete research: {e}")
 
+# Example 9: Export to CSV (combined file)
+def export_csv_combined_example():
+    """Export all keyword data to a single CSV file"""
+    try:
+        # Export to default filename
+        csv_file = api.export_to_csv("cats", limit=10)
+        print(f"\n📄 Exported combined CSV: {csv_file}")
+        
+        # Export to custom filename
+        custom_file = api.export_to_csv("dogs", "my_dog_keywords.csv", limit=5)
+        print(f"📄 Exported custom CSV: {custom_file}")
+        
+    except Exception as e:
+        print(f"Error exporting CSV: {e}")
+
+# Example 10: Export to separate CSV files
+def export_csv_separate_example():
+    """Export keyword data to separate CSV files for each type"""
+    try:
+        # Export to separate files in current directory
+        file_paths = api.export_separate_csvs("cats", limit=10)
+        print(f"\n📁 Exported separate CSV files:")
+        for data_type, file_path in file_paths.items():
+            print(f"  {data_type}: {file_path}")
+        
+        # Export to custom directory
+        import os
+        output_dir = "keyword_exports"
+        file_paths = api.export_separate_csvs("dogs", output_dir=output_dir, limit=5)
+        print(f"\n📁 Exported to {output_dir}:")
+        for data_type, file_path in file_paths.items():
+            print(f"  {data_type}: {file_path}")
+        
+    except Exception as e:
+        print(f"Error exporting separate CSVs: {e}")
+
+# Example 11: Complete workflow with CSV export
+def complete_workflow_with_csv(keyword: str):
+    """Complete keyword research workflow with CSV export"""
+    print(f"\n🎯 Complete Workflow with CSV Export for: '{keyword}'")
+    print("=" * 60)
+    
+    try:
+        # 1. Perform complete research (display results)
+        complete_keyword_research(keyword)
+        
+        # 2. Export to CSV files
+        print(f"\n💾 Exporting results to CSV...")
+        
+        # Export combined CSV
+        combined_file = api.export_to_csv(keyword, limit=20)
+        
+        # Export separate CSVs
+        separate_files = api.export_separate_csvs(keyword, output_dir="exports", limit=20)
+        
+        print(f"\n✅ Export Summary:")
+        print(f"  Combined file: {combined_file}")
+        print(f"  Separate files directory: exports/")
+        for data_type, file_path in separate_files.items():
+            print(f"    {data_type}: {file_path}")
+            
+    except Exception as e:
+        print(f"Error in complete workflow: {e}")
+
 if __name__ == "__main__":
     print("vidIQ Python API Examples")
     print("=" * 30)
@@ -197,5 +261,12 @@ if __name__ == "__main__":
     get_related_keywords_example()
     get_questions_example()
     
+    # CSV Export examples
+    # export_csv_combined_example()
+    # export_csv_separate_example()
+    
     # Complete workflow
     complete_keyword_research("cats")
+    
+    # Complete workflow with CSV export
+    # complete_workflow_with_csv("cats")

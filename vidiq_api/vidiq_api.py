@@ -15,7 +15,8 @@ import requests
 import json
 import time
 import os
-from typing import Dict, Optional, Any
+import csv
+from typing import Dict, Optional, Any, List
 
 
 class VidiqAPI:
@@ -332,6 +333,233 @@ class VidiqAPI:
             raise Exception(f"Invalid JSON response: {str(e)}")
         except Exception as e:
             raise Exception(f"API error: {str(e)}")
+    
+    def export_to_csv(self, keyword: str, output_file: str = None, limit: int = 300, delay: float = 1.0) -> str:
+        """
+        Export all keyword research data (related, matching, questions) to CSV format
+        
+        Args:
+            keyword: The keyword to research
+            output_file: Path to output CSV file (optional, defaults to keyword-based filename)
+            limit: Maximum number of results per category (default: 300)
+            delay: Delay between API requests (seconds)
+            
+        Returns:
+            Path to the created CSV file
+            
+        Raises:
+            Exception: If any API call fails or CSV creation fails
+        """
+        if not keyword.strip():
+            raise ValueError("Keyword cannot be empty")
+        
+        # Generate default filename if not provided
+        if not output_file:
+            safe_keyword = "".join(c for c in keyword if c.isalnum() or c in (' ', '-', '_')).rstrip()
+            safe_keyword = safe_keyword.replace(' ', '_')
+            output_file = f"{safe_keyword}_keywords.csv"
+        
+        try:
+            print(f"🔍 Gathering keyword data for: {keyword}")
+            
+            # Get all three types of data
+            related_data = self.get_related_keywords(keyword, delay=delay)
+            matching_data = self.get_matching_keywords(keyword, limit=limit, delay=delay)
+            questions_data = self.get_questions(keyword, limit=limit, delay=delay)
+            
+            # Prepare CSV data
+            csv_rows = []
+            
+            # Add related keywords
+            self._add_related_to_csv(csv_rows, related_data)
+            
+            # Add matching keywords
+            self._add_matching_to_csv(csv_rows, matching_data)
+            
+            # Add questions
+            self._add_questions_to_csv(csv_rows, questions_data)
+            
+            # Write to CSV file
+            self._write_csv_file(output_file, csv_rows, keyword)
+            
+            print(f"✅ CSV exported successfully: {output_file}")
+            print(f"📊 Total keywords exported: {len(csv_rows)}")
+            
+            return output_file
+            
+        except Exception as e:
+            raise Exception(f"Failed to export CSV: {str(e)}")
+    
+    def _add_related_to_csv(self, csv_rows: List[Dict], related_data: Dict) -> None:
+        """Add related keywords data to CSV rows"""
+        related_keywords = related_data.get('data', [])
+        
+        for item in related_keywords:
+            if isinstance(item, dict):
+                keyword_text = item.get('keyword', str(item))
+                score = item.get('score', 'N/A')
+                volume = item.get('volume', 'N/A')
+                competition = item.get('competition', 'N/A')
+            else:
+                keyword_text = str(item)
+                score = 'N/A'
+                volume = 'N/A'
+                competition = 'N/A'
+            
+            csv_rows.append({
+                'keyword': keyword_text,
+                'type': 'related',
+                'score': score,
+                'volume': volume,
+                'competition': competition,
+                'source_keyword': related_data.get('keyword', ''),
+                'timestamp': related_data.get('timestamp', '')
+            })
+    
+    def _add_matching_to_csv(self, csv_rows: List[Dict], matching_data: Dict) -> None:
+        """Add matching keywords data to CSV rows"""
+        permutations = matching_data.get('data', {}).get('permutations', [])
+        
+        for item in permutations:
+            if isinstance(item, dict):
+                keyword_text = item.get('keyword', str(item))
+                score = item.get('score', 'N/A')
+                volume = item.get('volume', 'N/A')
+                competition = item.get('competition', 'N/A')
+            else:
+                keyword_text = str(item)
+                score = 'N/A'
+                volume = 'N/A'
+                competition = 'N/A'
+            
+            csv_rows.append({
+                'keyword': keyword_text,
+                'type': 'matching',
+                'score': score,
+                'volume': volume,
+                'competition': competition,
+                'source_keyword': matching_data.get('keyword', ''),
+                'timestamp': matching_data.get('timestamp', '')
+            })
+    
+    def _add_questions_to_csv(self, csv_rows: List[Dict], questions_data: Dict) -> None:
+        """Add questions data to CSV rows"""
+        questions = questions_data.get('data', {}).get('questions', [])
+        
+        for item in questions:
+            if isinstance(item, dict):
+                keyword_text = item.get('keyword', str(item))
+                score = item.get('score', 'N/A')
+                volume = item.get('volume', 'N/A')
+                competition = item.get('competition', 'N/A')
+            else:
+                keyword_text = str(item)
+                score = 'N/A'
+                volume = 'N/A'
+                competition = 'N/A'
+            
+            csv_rows.append({
+                'keyword': keyword_text,
+                'type': 'question',
+                'score': score,
+                'volume': volume,
+                'competition': competition,
+                'source_keyword': questions_data.get('keyword', ''),
+                'timestamp': questions_data.get('timestamp', '')
+            })
+    
+    def _write_csv_file(self, output_file: str, csv_rows: List[Dict], source_keyword: str) -> None:
+        """Write CSV data to file"""
+        if not csv_rows:
+            raise Exception("No data to export")
+        
+        # Define CSV headers
+        headers = ['keyword', 'type', 'score', 'volume', 'competition', 'source_keyword', 'timestamp']
+        
+        try:
+            with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=headers)
+                
+                # Write header
+                writer.writeheader()
+                
+                # Write data rows
+                for row in csv_rows:
+                    writer.writerow(row)
+                    
+        except Exception as e:
+            raise Exception(f"Failed to write CSV file: {str(e)}")
+    
+    def export_separate_csvs(self, keyword: str, output_dir: str = ".", limit: int = 300, delay: float = 1.0) -> Dict[str, str]:
+        """
+        Export keyword research data to separate CSV files for each type
+        
+        Args:
+            keyword: The keyword to research
+            output_dir: Directory to save CSV files (default: current directory)
+            limit: Maximum number of results per category (default: 300)
+            delay: Delay between API requests (seconds)
+            
+        Returns:
+            Dictionary with file paths for each exported CSV type
+            
+        Raises:
+            Exception: If any API call fails or CSV creation fails
+        """
+        if not keyword.strip():
+            raise ValueError("Keyword cannot be empty")
+        
+        # Create safe filename base
+        safe_keyword = "".join(c for c in keyword if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        safe_keyword = safe_keyword.replace(' ', '_')
+        
+        # Ensure output directory exists
+        os.makedirs(output_dir, exist_ok=True)
+        
+        file_paths = {}
+        
+        try:
+            print(f"🔍 Gathering keyword data for: {keyword}")
+            
+            # Export related keywords
+            related_data = self.get_related_keywords(keyword, delay=delay)
+            related_file = os.path.join(output_dir, f"{safe_keyword}_related.csv")
+            self._export_single_type_csv(related_data, related_file, 'related')
+            file_paths['related'] = related_file
+            
+            # Export matching keywords
+            matching_data = self.get_matching_keywords(keyword, limit=limit, delay=delay)
+            matching_file = os.path.join(output_dir, f"{safe_keyword}_matching.csv")
+            self._export_single_type_csv(matching_data, matching_file, 'matching')
+            file_paths['matching'] = matching_file
+            
+            # Export questions
+            questions_data = self.get_questions(keyword, limit=limit, delay=delay)
+            questions_file = os.path.join(output_dir, f"{safe_keyword}_questions.csv")
+            self._export_single_type_csv(questions_data, questions_file, 'questions')
+            file_paths['questions'] = questions_file
+            
+            print(f"✅ All CSV files exported successfully to: {output_dir}")
+            
+            return file_paths
+            
+        except Exception as e:
+            raise Exception(f"Failed to export separate CSVs: {str(e)}")
+    
+    def _export_single_type_csv(self, data: Dict, output_file: str, data_type: str) -> None:
+        """Export a single type of data to CSV"""
+        csv_rows = []
+        
+        if data_type == 'related':
+            self._add_related_to_csv(csv_rows, data)
+        elif data_type == 'matching':
+            self._add_matching_to_csv(csv_rows, data)
+        elif data_type == 'questions':
+            self._add_questions_to_csv(csv_rows, data)
+        
+        self._write_csv_file(output_file, csv_rows, data.get('keyword', ''))
+        
+        print(f"📄 Exported {len(csv_rows)} {data_type} keywords to: {output_file}")
 
 
 def main():
